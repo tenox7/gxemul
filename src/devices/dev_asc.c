@@ -158,8 +158,11 @@ DEVICE_TICK(asc)
 	struct asc_data *d = (struct asc_data *) extra;
 	int new_assert = d->reg_ro[NCR_STAT] & NCRSTAT_INT;
 
+	/*  The interrupt output follows the Interrupt bit of the status:  */
 	if (new_assert && !d->irq_asserted)
 		INTERRUPT_ASSERT(d->irq);
+	else if (!new_assert && d->irq_asserted)
+		INTERRUPT_DEASSERT(d->irq);
 
 	d->irq_asserted = new_assert;
 }
@@ -201,6 +204,11 @@ static void dev_asc_reset(struct asc_data *d)
 	d->reg_wo[NCR_CCF] = 2;
 	memcpy(d->reg_ro, d->reg_wo, sizeof(d->reg_ro));
 	d->reg_wo[NCR_SYNCTP] = 5;
+
+	/*  The interrupt output goes inactive, as at power-up:  */
+	if (d->irq_asserted)
+		INTERRUPT_DEASSERT(d->irq);
+	d->irq_asserted = 0;
 }
 
 
