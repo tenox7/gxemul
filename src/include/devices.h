@@ -520,6 +520,7 @@ struct vr41xx_data *dev_vr41xx_init(struct machine *machine,
 struct lk201_data {
         int                     use_fb;
 	int			console_handle;
+	int			serial_handle[2];	/*  of lines 2, 3, or -1  */
 
         int                     (*space_available_in_queue)(void *,int);
         void                    (*add_to_rx_queue)(void *,int,int);

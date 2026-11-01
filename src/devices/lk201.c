@@ -504,6 +504,17 @@ void lk201_tick(struct machine *machine, struct lk201_data *d)
 			d->add_to_rx_queue(d->add_data, ch, port);
 	}
 
+	/*  Input from the consoles of their own of lines 2 and 3:  */
+	for (int i = 0; i < 2; i++) {
+		int h = d->serial_handle[i];
+
+		while (h >= 0 &&
+		    d->space_available_in_queue(d->add_data, DCCOMM_PORT + i) &&
+		    console_charavail(h))
+			d->add_to_rx_queue(d->add_data, console_readchar(h),
+			    DCCOMM_PORT + i);
+	}
+
 	/*
 	 *  An escape sequence that nothing follows for a while was typed: a
 	 *  lone ESC is Esc (Ctrl+[), and Esc and O in vi are Ctrl+[ and O:
@@ -640,8 +651,11 @@ void lk201_tx_data(struct lk201_data *d, int port, int idata)
 		break;
 	case DCCOMM_PORT:		/*  port 2  */
 	case DCPRINTER_PORT:		/*  port 3  */
-		/*  Simply print the character to stdout:  */
-		console_putchar(d->console_handle, idata);
+		/*  Simply print the character to stdout, or to the console of
+		    the line, when it has one of its own:  */
+		console_putchar(d->serial_handle[port - DCCOMM_PORT] >= 0?
+		    d->serial_handle[port - DCCOMM_PORT] : d->console_handle,
+		    idata);
 	}
 }
 
@@ -666,6 +680,7 @@ void lk201_init(struct lk201_data *d, int use_fb,
 	d->mouse_mode = 0;
 	d->mouse_revision = 0;	/*  0..15  */
 	d->console_handle = console_handle;
+	d->serial_handle[0] = d->serial_handle[1] = -1;
 
 	/*  The keys typed into the framebuffer window come with the
 	    modifiers held, Shift, Ctrl and Alt (see lk201_escape_key()):  */
