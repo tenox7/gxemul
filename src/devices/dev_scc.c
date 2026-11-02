@@ -364,17 +364,17 @@ DEVICE_TICK(scc)
 
 		/*
 		 *  Interrupts:
-		 *  (NOTE: Interrupt enables are always at channel A)
+		 *  (NOTE: The interrupt pending bits of both channels are
+		 *  in channel A's RR3; each channel has its own enables.)
 		 */
 		if (d->scc_register_w[N_SCC_REGS + SCC_WR9] &
 		    SCC_WR9_MASTER_IE) {
 			/*  TX interrupts?  */
 			if (d->scc_register_w[i * N_SCC_REGS + SCC_WR1] &
 			    SCC_WR1_TX_IE) {
-				if (d->scc_register_r[i * N_SCC_REGS + SCC_RR3]
-				    & SCC_RR3_TX_IP_A ||
-				    d->scc_register_r[i * N_SCC_REGS + SCC_RR3]
-				    & SCC_RR3_TX_IP_B) {
+				if (d->scc_register_r[N_SCC_REGS + SCC_RR3] &
+				    (i == SCC_CHANNEL_A? SCC_RR3_TX_IP_A :
+				    SCC_RR3_TX_IP_B)) {
 					INTERRUPT_ASSERT(d->irq);
 				}
 			}
